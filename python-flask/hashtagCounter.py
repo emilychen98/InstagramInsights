@@ -3,11 +3,19 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.webdriver import FirefoxProfile
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
-def findHashtag(hashtag):
+import json
+
+def findHashtag(json_tags):
+    delay = 5
     options = Options()
-    options.headless = False
+    options.headless = True
+    # profile = FirefoxProfile("/home/emily/.mozilla/firefox/ujbj6kw3.test")    
     profile = FirefoxProfile("C:/Users/XingLu Wang/AppData/Roaming/Mozilla/Firefox/Profiles/is2dwfxg.tester")
+
     browser = webdriver.Firefox(firefox_profile=profile, options=options)
     browser.implicitly_wait(2)
     browser.get('https://www.instagram.com/')
@@ -25,34 +33,31 @@ def findHashtag(hashtag):
         login_button = browser.find_element_by_xpath("//button[@type='submit']")
         login_button.click()
 
-    print("debug 1")
-
     if browser.find_elements_by_css_selector("button.sqdOP:nth-child(4)"):
         save_info_button = browser.find_element_by_css_selector("button.sqdOP:nth-child(4)")
         save_info_button.click()
 
-    print("debug 2")
-
-
     if browser.find_elements_by_css_selector("button.aOOlW:nth-child(2)"):
         not_now_button = browser.find_element_by_css_selector("button.aOOlW:nth-child(2)")
         not_now_button.click()
+    
+    data = json.loads(json_tags)
+    hashtags = data["hashtags"]
 
-    print("debug 3")
+    ig_dict = dict()
+    hashtag_counts_dict  = dict()
 
-    search_value = browser.find_element_by_css_selector("input[placeholder='Search']")
-    search_value.send_keys(hashtag)
-    sleep(1)
-    search_value.send_keys(Keys.ARROW_DOWN)
-    search_value.send_keys(Keys.RETURN)
+    for hashtag in hashtags:  
+        element_present = EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/section/nav/div[2]/div/div/div[2]'))
+        WebDriverWait(browser, delay).until(element_present)        
+        browser.get('https://www.instagram.com/explore/tags/' + hashtag[1:len(hashtag)])
+        element_present = EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/section/main/header/div[2]/div/div[2]/span/span'))
+        WebDriverWait(browser, delay).until(element_present)        
+        post_count = browser.find_element_by_xpath('/html/body/div[1]/section/main/header/div[2]/div/div[2]/span/span').text
+        hashtag_counts_dict[hashtag] = post_count
 
-    print("debug 4")
+    ig_dict["hashtags"] = hashtag_counts_dict
+    browser.close()
 
-    sleep(1)
-    post_count = 999
-    for elem in browser.find_elements_by_xpath('/html/body/div[1]/section/main/header/div[2]/div/div[2]/span/span'):
-        post_count = elem.text
-
-    print("Hashtag: ", hashtag, " Count: ", post_count)
-    return post_count
-    # browser.close()
+    # return a JSON string
+    return json.dumps(ig_dict)

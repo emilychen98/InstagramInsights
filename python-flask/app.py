@@ -1,6 +1,8 @@
 from flask import Flask, render_template, url_for, request, redirect
 from hashtagCounter import findHashtag
 
+import json
+
 app = Flask(__name__)
 
 
@@ -8,9 +10,9 @@ app = Flask(__name__)
 def index():
     if request.method == 'POST':
         req = request.get_json()
-        hashtag = req.get('hashtag')
-        count = findHashtag(hashtag)
-        return '''<h1>The hashtag is: {} and count is {}</h1>'''.format(hashtag, count)
+        counts = findHashtag(json.dumps(req))
+        print(counts)
+        return counts
     else:
         return "Hello World!"
 
